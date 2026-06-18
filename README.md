@@ -28,7 +28,7 @@ notebooks.
 
 ## Live demo
 
-🚀 **Dashboard:** `streamlit run app/streamlit_app.py`
+🚀 🚀 **[Live demo](https://ipl-analytics-20.streamlit.app/)** · or run locally with `streamlit run app/streamlit_app.py`
 
 The headline feature is the **🔴 Live in-match** tab — pick chasing team,
 bowling team, venue, then set the current state (target, score, wickets,
