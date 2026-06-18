@@ -610,24 +610,26 @@ def _live_context():
 VENUE_AVG, CHASE_STR, BOWL_STR, GLOBAL_MEAN = _live_context()
 
 
-# Helper: build glass HTML widgets
+# Helper: build glass HTML widgets — compact strings (no newlines inside)
+# Streamlit's markdown parser breaks the HTML rendering context on blank lines,
+# so every helper returns a single-line string with no leading/trailing whitespace.
 def glass_metric_tile(label, value, delta=None):
     delta_html = f'<div class="delta">{delta}</div>' if delta else ""
-    return f"""
-    <div class="metric-tile">
-        <div class="label">{label}</div>
-        <div class="value">{value}</div>
-        {delta_html}
-    </div>
-    """
+    return (
+        f'<div class="metric-tile">'
+        f'<div class="label">{label}</div>'
+        f'<div class="value">{value}</div>'
+        f'{delta_html}'
+        f'</div>'
+    )
 
 def stat_card(label, value, accent_class=""):
-    return f"""
-    <div class="stat-card">
-        <div class="stat-label">{label}</div>
-        <div class="stat-value {accent_class}">{value}</div>
-    </div>
-    """
+    return (
+        f'<div class="stat-card">'
+        f'<div class="stat-label">{label}</div>'
+        f'<div class="stat-value {accent_class}">{value}</div>'
+        f'</div>'
+    )
 
 
 # =============================================================================
@@ -733,20 +735,24 @@ with tab_live:
         </div>
         """, unsafe_allow_html=True)
 
-        # Chase math stat grid
+        # Chase math stat grid — build as a single concatenated string
         rr_class    = "success" if rr_diff >= 0 else "danger"
         rr_display  = f"{rr_diff:+.2f}"
-        st.markdown(f"""
-        <div class="section-label" style="margin-top:0.5rem;">Chase Math</div>
-        <div class="stat-grid">
-            {stat_card("Runs to win",     str(runs_to_win), "accent" if runs_to_win <= 12 else "")}
-            {stat_card("Balls remaining", str(balls_remaining))}
-            {stat_card("Wickets in hand", str(wickets_in_hand), "danger" if wickets_in_hand <= 3 else "")}
-            {stat_card("Required RR",     f"{required_run_rate:.2f}" if balls_remaining > 0 else "—")}
-            {stat_card("Current RR",      f"{current_run_rate:.2f}" if legal_balls_done > 0 else "—")}
-            {stat_card("RR differential", rr_display, rr_class)}
-        </div>
-        """, unsafe_allow_html=True)
+        chase_cards = "".join([
+            stat_card("Runs to win",     str(runs_to_win),
+                      "accent" if runs_to_win <= 12 else ""),
+            stat_card("Balls remaining", str(balls_remaining)),
+            stat_card("Wickets in hand", str(wickets_in_hand),
+                      "danger" if wickets_in_hand <= 3 else ""),
+            stat_card("Required RR",     f"{required_run_rate:.2f}" if balls_remaining > 0 else "—"),
+            stat_card("Current RR",      f"{current_run_rate:.2f}" if legal_balls_done > 0 else "—"),
+            stat_card("RR differential", rr_display, rr_class),
+        ])
+        st.markdown(
+            '<div class="section-label" style="margin-top:0.5rem;">Chase Math</div>'
+            f'<div class="stat-grid">{chase_cards}</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # =============================================================================
@@ -784,29 +790,30 @@ with tab_pre:
     winner    = team_a if p_a_win >= 0.5 else team_b
     winner_p  = max(p_a_win, p_b_win)
 
-    st.markdown(f"""
-    <div class="section-label" style="margin-top:1.5rem;">Pre-Match Forecast</div>
-    <div class="metric-row">
-        {glass_metric_tile(f"Innings 1 — {team_a}", f"{pred_inn1:.0f}",
-                           f"80% PI: {lo1:.0f} – {hi1:.0f}")}
-        {glass_metric_tile(f"Innings 2 — {team_b}", f"{pred_inn2:.0f}",
-                           f"80% PI: {lo2:.0f} – {hi2:.0f}")}
-        {glass_metric_tile("Predicted winner", winner,
-                           f"{winner_p:.0%} confidence")}
-    </div>
-
-    <div class="predictor-card">
-        <div class="predictor-eyebrow">Match Win Probability</div>
-        <div class="prob-bar" style="margin-top:14px;">
-            <div class="prob-bar-left"  style="width:{p_a_win*100:.1f}%"></div>
-            <div class="prob-bar-right" style="width:{p_b_win*100:.1f}%"></div>
-        </div>
-        <div class="predictor-versus">
-            <span>{team_a} &nbsp;<strong style="color:var(--ipl-gold)">{p_a_win:.1%}</strong></span>
-            <span>{team_b} &nbsp;<strong style="color:var(--ipl-sky)">{p_b_win:.1%}</strong></span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    pre_tiles = "".join([
+        glass_metric_tile(f"Innings 1 — {team_a}", f"{pred_inn1:.0f}",
+                          f"80% PI: {lo1:.0f} – {hi1:.0f}"),
+        glass_metric_tile(f"Innings 2 — {team_b}", f"{pred_inn2:.0f}",
+                          f"80% PI: {lo2:.0f} – {hi2:.0f}"),
+        glass_metric_tile("Predicted winner", winner,
+                          f"{winner_p:.0%} confidence"),
+    ])
+    st.markdown(
+        '<div class="section-label" style="margin-top:1.5rem;">Pre-Match Forecast</div>'
+        f'<div class="metric-row">{pre_tiles}</div>'
+        '<div class="predictor-card">'
+        '<div class="predictor-eyebrow">Match Win Probability</div>'
+        '<div class="prob-bar" style="margin-top:14px;">'
+        f'<div class="prob-bar-left"  style="width:{p_a_win*100:.1f}%"></div>'
+        f'<div class="prob-bar-right" style="width:{p_b_win*100:.1f}%"></div>'
+        '</div>'
+        '<div class="predictor-versus">'
+        f'<span>{team_a} &nbsp;<strong style="color:var(--ipl-gold)">{p_a_win:.1%}</strong></span>'
+        f'<span>{team_b} &nbsp;<strong style="color:var(--ipl-sky)">{p_b_win:.1%}</strong></span>'
+        '</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     st.info(
         "The 80% prediction interval (PI) means that in roughly 8 out of 10 matches with this "
@@ -848,15 +855,17 @@ with tab_hist:
     if len(h2h):
         wins_a = (h2h["winner"] == team_a).sum()
         wins_b = (h2h["winner"] == team_b).sum()
-        st.markdown(f"""
-        <div class="metric-row">
-            {glass_metric_tile("Total fixtures", str(len(h2h)))}
-            {glass_metric_tile(f"{team_a} wins", str(wins_a),
-                              f"{wins_a/len(h2h):.0%} win rate")}
-            {glass_metric_tile(f"{team_b} wins", str(wins_b),
-                              f"{wins_b/len(h2h):.0%} win rate")}
-        </div>
-        """, unsafe_allow_html=True)
+        h2h_tiles = "".join([
+            glass_metric_tile("Total fixtures", str(len(h2h))),
+            glass_metric_tile(f"{team_a} wins", str(wins_a),
+                              f"{wins_a/len(h2h):.0%} win rate"),
+            glass_metric_tile(f"{team_b} wins", str(wins_b),
+                              f"{wins_b/len(h2h):.0%} win rate"),
+        ])
+        st.markdown(
+            f'<div class="metric-row">{h2h_tiles}</div>',
+            unsafe_allow_html=True,
+        )
     else:
         st.info(f"No historical fixtures between {team_a} and {team_b} in the dataset.")
 
@@ -865,13 +874,15 @@ with tab_hist:
         st.markdown(f'<div class="section-label" style="margin-top:1.5rem;">Venue Profile — {venue}</div>',
                     unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div class="metric-row">
-            {glass_metric_tile("Avg 1st-innings score", f"{v_innings['innings_total'].mean():.0f}", "runs")}
-            {glass_metric_tile("Standard deviation",    f"{v_innings['innings_total'].std():.0f}",  "runs")}
-            {glass_metric_tile("Matches at venue",      str(len(v_innings)))}
-        </div>
-        """, unsafe_allow_html=True)
+        venue_tiles = "".join([
+            glass_metric_tile("Avg 1st-innings score", f"{v_innings['innings_total'].mean():.0f}", "runs"),
+            glass_metric_tile("Standard deviation",    f"{v_innings['innings_total'].std():.0f}",  "runs"),
+            glass_metric_tile("Matches at venue",      str(len(v_innings))),
+        ])
+        st.markdown(
+            f'<div class="metric-row">{venue_tiles}</div>',
+            unsafe_allow_html=True,
+        )
 
         st.markdown('<div class="section-label" style="margin-top:1.5rem;">Score Distribution</div>',
                     unsafe_allow_html=True)
