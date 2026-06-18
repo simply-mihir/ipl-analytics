@@ -1,0 +1,6 @@
+Test,Statistic,p-value,Decision
+1. One-sample t (mu0=160),7.6236,5.02e-14,REJECT H0
+2. Welch t (1st vs 2nd),9.8087,2.72e-22,REJECT H0
+3. Chi-square (decision x outcome),7.1322,0.0076,REJECT H0
+4. ANOVA (top-6 venues),1.0662,0.3780,FAIL TO REJECT H0
+5. Z-test (toss-win > 0.5),0.8137,0.2079,FAIL TO REJECT H0
